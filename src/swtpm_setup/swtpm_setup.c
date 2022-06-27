@@ -533,23 +533,19 @@ static int init_tpm2(unsigned long flags, gchar **swtpm_prg_l, const gchar *conf
 
     ret = swtpm2->ops->shutdown(swtpm);
 
-destroy:
-    swtpm->cops->destroy(swtpm);
-
-error:
-    swtpm_free(swtpm);
-
-    unsigned char vtpm_state[4518];
+     unsigned char vtpm_state[4518];
 
     FILE *vtpm_state_file = fopen(tpm2_state_path, "r");
      if (!vtpm_state_file) {  /* validate file open for reading */
-        fprintf (stderr, "error: file open vtpm_state_file failed\n");
+        logerr(gl_LOGFILE, "error: file open vtpm_state_file failed\n");
+        goto error;
     }
 
     int read_result = fscanf(vtpm_state_file, "%s", vtpm_state);
     
     if (!read_result) {  /* validate file open for reading */
-        fprintf (stderr, "error: failed to read state data\n");
+        logerr(gl_LOGFILE, "error: failed to read state data\n");
+        goto error;
     }
 
     fclose(vtpm_state_file);
@@ -566,15 +562,22 @@ error:
 
     }
 
-    printf("State Hash: %s\n", state_hash_hex_output);
+    logerr(gl_LOGFILE, "First State Hash: %s\n", state_hash_hex_output);
 
     FILE *hash_file = fopen("vTPM-state-hash", "w+");
     if (!hash_file) {  /* validate file open for reading */
-        fprintf (stderr, "error: file open vTPM-state-hash failed\n");
+        logerr(gl_LOGFILE, "error: file open vTPM-state-hash failed\n");
+        goto error;
     }
 
     fputs(state_hash_hex_output, hash_file);
     fclose(hash_file);
+
+destroy:
+    swtpm->cops->destroy(swtpm);
+
+error:
+    swtpm_free(swtpm);
 
     return ret;
 }
