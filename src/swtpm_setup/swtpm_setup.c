@@ -544,14 +544,12 @@ error:
     FILE *vtpm_state_file = fopen(tpm2_state_path, "r");
      if (!vtpm_state_file) {  /* validate file open for reading */
         fprintf (stderr, "error: file open vtpm_state_file failed\n");
-        exit (EXIT_FAILURE);
     }
 
     int read_result = fscanf(vtpm_state_file, "%s", vtpm_state);
     
     if (!read_result) {  /* validate file open for reading */
         fprintf (stderr, "error: failed to read state data\n");
-        exit (EXIT_FAILURE);
     }
 
     fclose(vtpm_state_file);
@@ -573,7 +571,6 @@ error:
     FILE *hash_file = fopen("vTPM-state-hash", "w+");
     if (!hash_file) {  /* validate file open for reading */
         fprintf (stderr, "error: file open vTPM-state-hash failed\n");
-        exit (EXIT_FAILURE);
     }
 
     fputs(state_hash_hex_output, hash_file);
