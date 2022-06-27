@@ -537,7 +537,7 @@ static int init_tpm2(unsigned long flags, gchar **swtpm_prg_l, const gchar *conf
 
     FILE *vtpm_state_file = fopen(tpm2_state_path, "r");
      if (!vtpm_state_file) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: file open vtpm_state_file failed\n");
+        logerr(gl_LOGFILE, "error: file open vtpm_state_file failed path:%s\n", tpm2_state_path);
         goto error;
     }
 
