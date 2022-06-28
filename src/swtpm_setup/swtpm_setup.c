@@ -1680,7 +1680,7 @@ int main(int argc, char *argv[])
     strcpy(result, vtpm_state_path_formated);
     strcat(result, vtpm_filename);
 
-    char hash_filename[] = "vTPM-state-hash";
+    char hash_filename[] = "/vTPM-state-hash";
     char *hash_path = malloc(strlen(vtpm_state_path_formated) + strlen(hash_filename) + 1);
 
     strcpy(result, vtpm_state_path_formated);
