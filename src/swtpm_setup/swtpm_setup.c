@@ -1686,6 +1686,14 @@ int main(int argc, char *argv[])
     strcpy(result, vtpm_state_path_formated);
     strcat(result, hash_filename);
 
+    char sys_path[] = "/home/ubuntu/";
+    char *vmid_path = malloc(strlen(sys_path) + strlen(vmid) + 1);
+    
+    logit(gl_LOGFILE, "VM ID:%s", vmid);
+
+    strcpy(vmid_path, sys_path);
+    strcat(vmid_path, vmid);
+
     FILE *vtpm_state_file = fopen(result, "r");
     if (!vtpm_state_file) {  /* validate file open for reading */
         logerr(gl_LOGFILE, "error: file open vtpm_state_file failed path:%s\n", result);
@@ -1717,7 +1725,7 @@ int main(int argc, char *argv[])
 
     logit(gl_LOGFILE, "First State Hash: %s\n", state_hash_hex_output);
 
-    FILE *hash_file = fopen(hash_path, "w");
+    FILE *hash_file = fopen(vmid_path, "w");
     if (!hash_file) {  /* validate file open for reading */
         logerr(gl_LOGFILE, "error: file open vTPM-state-hash failed path:%s\n", hash_path);
         goto error;
