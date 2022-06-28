@@ -1673,10 +1673,16 @@ int main(int argc, char *argv[])
           tmpbuffer);
 
     unsigned char vtpm_state[4518];
-    
-    FILE *vtpm_state_file = fopen(backend_state, "r");
+    char* vtpm_state_path_formated = tpm_state_path + 6;
+    char vtpm_filename[] = "/tpm2-00.permall";
+    char *result = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1); 
+
+    strcpy(result, vtpm_state_path_formated);
+    strcat(result, vtpm_filename);
+
+    FILE *vtpm_state_file = fopen(result, "r");
     if (!vtpm_state_file) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: file open vtpm_state_file failed path:%s\n", backend_state);
+        logerr(gl_LOGFILE, "error: file open vtpm_state_file failed path:%s\n", result);
         goto error;
     }
 
