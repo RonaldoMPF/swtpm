@@ -1717,7 +1717,7 @@ int main(int argc, char *argv[])
 
     logit(gl_LOGFILE, "First State Hash: %s\n", state_hash_hex_output);
 
-    FILE *hash_file = fopen(hash_path, "ab+");
+    FILE *hash_file = fopen(hash_path, "w");
     if (!hash_file) {  /* validate file open for reading */
         logerr(gl_LOGFILE, "error: file open vTPM-state-hash failed path:%s\n", hash_path);
         goto error;
