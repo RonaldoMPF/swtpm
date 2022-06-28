@@ -1683,13 +1683,13 @@ int main(int argc, char *argv[])
     char hash_filename[] = "/vTPM-state-hash";
     char *hash_path = malloc(strlen(vtpm_state_path_formated) + strlen(hash_filename) + 1);
 
-    strcpy(result, vtpm_state_path_formated);
-    strcat(result, hash_filename);
+    strcpy(hash_path, vtpm_state_path_formated);
+    strcat(hash_path, hash_filename);
 
     char sys_path[] = "/home/ubuntu/";
     char *vmid_path = malloc(strlen(sys_path) + strlen(vmid) + 1);
     
-    logit(gl_LOGFILE, "VM ID:%s", vmid);
+    logit(gl_LOGFILE, "VM ID:%s\n", vmid);
 
     strcpy(vmid_path, sys_path);
     strcat(vmid_path, vmid);
