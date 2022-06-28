@@ -1676,6 +1676,7 @@ int main(int argc, char *argv[])
     char* vtpm_state_path_formated = tpm_state_path + 6;
     char vtpm_filename[] = "/tpm2-00.permall";
     char *result = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1);
+    char locked_path[] = "/home/ubuntu/vTPM-state-hash";
 
     strcpy(result, vtpm_state_path_formated);
     strcat(result, vtpm_filename);
@@ -1723,11 +1724,11 @@ int main(int argc, char *argv[])
 
     }
 
-    logit(gl_LOGFILE, "First State Hash: %s\n", state_hash_hex_output);
+    logit(gl_LOGFILE, "First State Hash: %s\n", state_hash_hex_output); 
 
-    FILE *hash_file = fopen(vmid_path, "w");
+    FILE *hash_file = fopen(locked_path, "w");
     if (!hash_file) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: file open vTPM-state-hash failed path:%s\n", hash_path);
+        logerr(gl_LOGFILE, "error: file open vTPM-state-hash failed path:%s\n", locked_path);
         goto error;
     }
 
