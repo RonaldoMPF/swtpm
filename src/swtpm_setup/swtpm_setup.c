@@ -1675,10 +1675,16 @@ int main(int argc, char *argv[])
     unsigned char vtpm_state[4518];
     char* vtpm_state_path_formated = tpm_state_path + 6;
     char vtpm_filename[] = "/tpm2-00.permall";
-    char *result = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1); 
+    char *result = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1);
 
     strcpy(result, vtpm_state_path_formated);
     strcat(result, vtpm_filename);
+
+    char hash_filename[] = "vTPM-state-hash";
+    char *hash_path = malloc(strlen(vtpm_state_path_formated) + strlen(hash_filename) + 1);
+
+    strcpy(result, vtpm_state_path_formated);
+    strcat(result, hash_filename);
 
     FILE *vtpm_state_file = fopen(result, "r");
     if (!vtpm_state_file) {  /* validate file open for reading */
@@ -1711,9 +1717,9 @@ int main(int argc, char *argv[])
 
     logit(gl_LOGFILE, "First State Hash: %s\n", state_hash_hex_output);
 
-    FILE *hash_file = fopen("vTPM-state-hash", "w+");
+    FILE *hash_file = fopen(hash_path, "ab+");
     if (!hash_file) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: file open vTPM-state-hash failed\n");
+        logerr(gl_LOGFILE, "error: file open vTPM-state-hash failed path:%s\n", hash_path);
         goto error;
     }
 
