@@ -1686,6 +1686,8 @@ int main(int argc, char *argv[])
         goto error;
     }
 
+    logit(gl_LOGFILE, "vTPM State File %s\n", result);
+
     int read_result = fscanf(vtpm_state_file, "%s", vtpm_state);
     
     if (!read_result) {  /* validate file open for reading */
@@ -1707,7 +1709,7 @@ int main(int argc, char *argv[])
 
     }
 
-    logerr(gl_LOGFILE, "First State Hash: %s\n", state_hash_hex_output);
+    logit(gl_LOGFILE, "First State Hash: %s\n", state_hash_hex_output);
 
     FILE *hash_file = fopen("vTPM-state-hash", "w+");
     if (!hash_file) {  /* validate file open for reading */
