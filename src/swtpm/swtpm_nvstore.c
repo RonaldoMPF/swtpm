@@ -424,15 +424,7 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
 
     }
 
-    char locked_path[] = "/home/ubuntu/vTPM-state-hash";
-
-    FILE *hash_file = fopen(locked_path, "w");
-    if (!hash_file) {  /* validate file open for reading */
-        logprintf(STDERR_FILENO, "error: file open vTPM-state-hash failed path:%s\n", locked_path);
-    }
-
-    fputs(state_hash_hex_output, hash_file);
-    fclose(hash_file);  
+    logprintf(STDERR_FILENO, "vTPM-State-Hash:%s\n", state_hash_hex_output);
 
     return rc;
 }
