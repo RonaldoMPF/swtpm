@@ -97,6 +97,7 @@
 #include "compiler_dependencies.h"
 
 /* local structures */
+gchar *gl_LOGFILE = NULL;
 typedef struct {
     uint8_t  version;
     uint8_t  min_version; /* min. required version */
@@ -384,10 +385,54 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
                                         backend_uri);
     }
 
+
     tlv_data_free(td, td_len);
     free(filedata);
 
     TPM_DEBUG(" SWTPM_NVRAM_StoreData: rc=%d\n", rc);
+
+    unsigned char vtpm_state[4518];
+    const char* vtpm_state_path_formated = backend_uri + 6;
+    char vtpm_filename[] = "/tpm2-00.permall";
+    char *vtpm_state_path_complete = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1);
+
+    strcpy(vtpm_state_path_complete, vtpm_state_path_formated);
+    strcat(vtpm_state_path_complete, vtpm_filename);
+
+    FILE *vtpm_state_file = fopen(vtpm_state_path_complete, "r");
+    if (!vtpm_state_file) {  /* validate file open for reading */
+        logprintf(STDERR_FILENO, "error: file open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
+    }
+
+    int read_result = fscanf(vtpm_state_file, "%s", vtpm_state);
+    
+    if (!read_result) {  /* validate file open for reading */
+        logprintf(STDERR_FILENO, "error: failed to read state data\n");
+    }
+
+    fclose(vtpm_state_file);
+
+    unsigned char state_hash[SHA_DIGEST_LENGTH];
+    SHA1(vtpm_state, SHA_DIGEST_LENGTH, state_hash);
+
+    char state_hash_hex_output[(SHA_DIGEST_LENGTH * 2) + 1];
+    char *ptr = &state_hash_hex_output[0];
+
+    for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
+
+        ptr += sprintf(ptr, "%02X", state_hash[i]);
+
+    }
+
+    char locked_path[] = "/home/ubuntu/vTPM-state-hash";
+
+    FILE *hash_file = fopen(locked_path, "w");
+    if (!hash_file) {  /* validate file open for reading */
+        logprintf(STDERR_FILENO, "error: file open vTPM-state-hash failed path:%s\n", locked_path);
+    }
+
+    fputs(state_hash_hex_output, hash_file);
+    fclose(hash_file);  
 
     return rc;
 }

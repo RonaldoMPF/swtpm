@@ -37,6 +37,7 @@
 #include "swtpm_setup_utils.h"
 #include "swtpm_utils.h"
 
+
 #include <openssl/sha.h>
 
 /* default values for passwords */
@@ -1675,33 +1676,20 @@ int main(int argc, char *argv[])
     unsigned char vtpm_state[4518];
     char* vtpm_state_path_formated = tpm_state_path + 6;
     char vtpm_filename[] = "/tpm2-00.permall";
-    char *result = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1);
-    char locked_path[] = "/home/ubuntu/vTPM-state-hash";
+    char *vtpm_state_path_complete = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1);
 
-    strcpy(result, vtpm_state_path_formated);
-    strcat(result, vtpm_filename);
-
-    char hash_filename[] = "/vTPM-state-hash";
-    char *hash_path = malloc(strlen(vtpm_state_path_formated) + strlen(hash_filename) + 1);
-
-    strcpy(hash_path, vtpm_state_path_formated);
-    strcat(hash_path, hash_filename);
-
-    char sys_path[] = "/home/ubuntu/";
-    char *vmid_path = malloc(strlen(sys_path) + strlen(vmid) + 1);
+    strcpy(vtpm_state_path_complete, vtpm_state_path_formated);
+    strcat(vtpm_state_path_complete, vtpm_filename);
     
-    logit(gl_LOGFILE, "VM ID:%s\n", vmid);
+    logit(gl_LOGFILE, "VM-ID:%s\n", vmid);
 
-    strcpy(vmid_path, sys_path);
-    strcat(vmid_path, vmid);
-
-    FILE *vtpm_state_file = fopen(result, "r");
+    FILE *vtpm_state_file = fopen(vtpm_state_path_complete, "r");
     if (!vtpm_state_file) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: file open vtpm_state_file failed path:%s\n", result);
+        logerr(gl_LOGFILE, "error: file open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
         goto error;
     }
 
-    logit(gl_LOGFILE, "vTPM State File %s\n", result);
+    logit(gl_LOGFILE, "vTPM-State-File:%s\n", vtpm_state_path_complete);
 
     int read_result = fscanf(vtpm_state_file, "%s", vtpm_state);
     
@@ -1724,16 +1712,7 @@ int main(int argc, char *argv[])
 
     }
 
-    logit(gl_LOGFILE, "First State Hash: %s\n", state_hash_hex_output); 
-
-    FILE *hash_file = fopen(locked_path, "w");
-    if (!hash_file) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: file open vTPM-state-hash failed path:%s\n", locked_path);
-        goto error;
-    }
-
-    fputs(state_hash_hex_output, hash_file);
-    fclose(hash_file);  
+    logit(gl_LOGFILE, "vTPM-First-State-Hash:%s\n", state_hash_hex_output); 
 
 out:
     if (certsdir && g_rmdir(certsdir) != 0)
