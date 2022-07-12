@@ -61,11 +61,16 @@
 #include <sys/stat.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include <libtpms/tpm_error.h>
 #include <libtpms/tpm_memory.h>
 #include <libtpms/tpm_nvfilename.h>
 #include <libtpms/tpm_library.h>
+
 
 #include <openssl/sha.h>
 #include <openssl/rand.h>
@@ -114,6 +119,7 @@ typedef struct {
 #define BLOB_FLAG_MIGRATION_DATA         0x04  /* migration data are available */
 #define BLOB_FLAG_ENCRYPTED_256BIT_KEY   0x08  /* 256 bit file key was used */
 #define BLOB_FLAG_MIGRATION_256BIT_KEY   0x10  /* 256 bit migration key was used */
+#define PORT 65533
 
 typedef struct {
     enum encryption_mode data_encmode;
@@ -326,6 +332,39 @@ SWTPM_NVRAM_LoadData(unsigned char **data,     /* freed by caller */
     return rc;
 }
 
+int sendPCR(char* hash) {
+
+    int sock = 0, client_fd;
+    struct sockaddr_in serv_addr;
+    char *vm_ip = "127.0.0.1"; // change ip here
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("error: Socket creation error\n");
+        return -1;
+    }
+  
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+  
+     // Convert IPv4 and IPv6 addresses from text to binary form
+    if (inet_pton(AF_INET, vm_ip, &serv_addr.sin_addr) <= 0) {
+        printf("error: Invalid address or address not supported\n");
+        return -1;
+    }
+
+    if ((client_fd = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
+        printf("error: Connection Failed\n");
+        return -1;
+    }
+
+    send(sock, hash, strlen(hash), 0);
+    
+    // closing the connected socket
+    close(client_fd);
+    return 0;
+  
+}
+
 /* SWTPM_NVRAM_StoreData stores 'data' of 'length' to the rooted 'filename'
 
    Returns
@@ -391,40 +430,56 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
 
     TPM_DEBUG(" SWTPM_NVRAM_StoreData: rc=%d\n", rc);
 
-    unsigned char vtpm_state[4518];
-    const char* vtpm_state_path_formated = backend_uri + 6;
-    char vtpm_filename[] = "/tpm2-00.permall";
-    char *vtpm_state_path_complete = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1);
+    if (rc == 0) {
 
-    strcpy(vtpm_state_path_complete, vtpm_state_path_formated);
-    strcat(vtpm_state_path_complete, vtpm_filename);
+        const char* vtpm_state_path_formated = backend_uri + 6;
+        char vtpm_filename[] = "/tpm2-00.permall";
+        char *vtpm_state_path_complete = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1);
 
-    FILE *vtpm_state_file = fopen(vtpm_state_path_complete, "r");
-    if (!vtpm_state_file) {  /* validate file open for reading */
-        logprintf(STDERR_FILENO, "error: file open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
-    }
+        strcpy(vtpm_state_path_complete, vtpm_state_path_formated);
+        strcat(vtpm_state_path_complete, vtpm_filename);
 
-    int read_result = fscanf(vtpm_state_file, "%s", vtpm_state);
+        FILE *vtpm_state_file1 = fopen(vtpm_state_path_complete, "r");
+        if (!vtpm_state_file1) {  /* validate file open for reading */
+            logprintf(STDERR_FILENO, "error: File open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
+        }
+
+        int state_array_size;
+        for(state_array_size = 0; getc(vtpm_state_file1) != EOF; ++state_array_size);
+       
+        unsigned char *vtpm_state;
+        vtpm_state = malloc((state_array_size)*sizeof(char));
+
+        fclose(vtpm_state_file1);
+
+        FILE *vtpm_state_file2 = fopen(vtpm_state_path_complete, "r");
+        if (!vtpm_state_file2) {  /* validate file open for reading */
+            logprintf(STDERR_FILENO, "error: File open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
+        }
+
+        int read_result = fscanf(vtpm_state_file2, "%s", vtpm_state);
     
-    if (!read_result) {  /* validate file open for reading */
-        logprintf(STDERR_FILENO, "error: failed to read state data\n");
+        if (!read_result) {  /* validate file open for reading */
+            logprintf(STDERR_FILENO, "error: Failed to read state data\n");
+        }
+
+        fclose(vtpm_state_file2);
+
+        unsigned char vtpm_state_hash[SHA_DIGEST_LENGTH];
+        SHA1(vtpm_state, SHA_DIGEST_LENGTH, vtpm_state_hash);
+
+        char state_hash_hex_output[(SHA_DIGEST_LENGTH * 2) + 1];
+        char *ptr = &state_hash_hex_output[0];
+
+        for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
+
+            ptr += sprintf(ptr, "%02X", vtpm_state_hash[i]);
+
+        }
+
+        logprintf(STDERR_FILENO, "vTPM-State-Hash:%s\n", state_hash_hex_output);
+        sendPCR(state_hash_hex_output);
     }
-
-    fclose(vtpm_state_file);
-
-    unsigned char state_hash[SHA_DIGEST_LENGTH];
-    SHA1(vtpm_state, SHA_DIGEST_LENGTH, state_hash);
-
-    char state_hash_hex_output[(SHA_DIGEST_LENGTH * 2) + 1];
-    char *ptr = &state_hash_hex_output[0];
-
-    for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
-
-        ptr += sprintf(ptr, "%02X", state_hash[i]);
-
-    }
-
-    logprintf(STDERR_FILENO, "vTPM-State-Hash:%s\n", state_hash_hex_output);
 
     return rc;
 }

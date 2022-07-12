@@ -1672,8 +1672,7 @@ int main(int argc, char *argv[])
     }
     logit(gl_LOGFILE, "Ending vTPM manufacturing @ %s\n",
           tmpbuffer);
-
-    unsigned char vtpm_state[4518];
+    
     char* vtpm_state_path_formated = tpm_state_path + 6;
     char vtpm_filename[] = "/tpm2-00.permall";
     char *vtpm_state_path_complete = malloc(strlen(vtpm_state_path_formated) + strlen(vtpm_filename) + 1);
@@ -1683,32 +1682,46 @@ int main(int argc, char *argv[])
     
     logit(gl_LOGFILE, "VM-ID:%s\n", vmid);
 
-    FILE *vtpm_state_file = fopen(vtpm_state_path_complete, "r");
-    if (!vtpm_state_file) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: file open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
+    FILE *vtpm_state_file1 = fopen(vtpm_state_path_complete, "r");
+    if (!vtpm_state_file1) {  /* validate file open for reading */
+        logerr(gl_LOGFILE, "error: File open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
         goto error;
     }
 
+    int state_array_size;
+    for(state_array_size = 0; getc(vtpm_state_file1) != EOF; ++state_array_size);
+       
+    unsigned char *vtpm_state;
+    vtpm_state = malloc((state_array_size)*sizeof(char));
+
+    fclose(vtpm_state_file1);
+
+    FILE *vtpm_state_file2 = fopen(vtpm_state_path_complete, "r");
+    if (!vtpm_state_file2) {  /* validate file open for reading */
+        logerr(gl_LOGFILE, "error: File open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
+        goto error;
+    }
+    
     logit(gl_LOGFILE, "vTPM-State-File:%s\n", vtpm_state_path_complete);
 
-    int read_result = fscanf(vtpm_state_file, "%s", vtpm_state);
+    int read_result = fscanf(vtpm_state_file2, "%s", vtpm_state);
     
     if (!read_result) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: failed to read state data\n");
+        logerr(gl_LOGFILE, "error: Failed to read state data\n");
         goto error;
     }
 
-    fclose(vtpm_state_file);
+    fclose(vtpm_state_file2);
 
-    unsigned char state_hash[SHA_DIGEST_LENGTH];
-    SHA1(vtpm_state, SHA_DIGEST_LENGTH, state_hash);
+    unsigned char vtpm_state_hash[SHA_DIGEST_LENGTH];
+    SHA1(vtpm_state, SHA_DIGEST_LENGTH, vtpm_state_hash);
 
     char state_hash_hex_output[(SHA_DIGEST_LENGTH * 2) + 1];
     char *ptr = &state_hash_hex_output[0];
 
     for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
 
-        ptr += sprintf(ptr, "%02X", state_hash[i]);
+        ptr += sprintf(ptr, "%02X", vtpm_state_hash[i]);
 
     }
 
