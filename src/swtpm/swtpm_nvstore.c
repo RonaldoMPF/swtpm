@@ -466,7 +466,7 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
         fclose(vtpm_state_file2);
 
         unsigned char vtpm_state_hash[SHA_DIGEST_LENGTH];
-        SHA1(vtpm_state, SHA_DIGEST_LENGTH, vtpm_state_hash);
+        SHA1(vtpm_state, state_array_size, vtpm_state_hash);
 
         char state_hash_hex_output[(SHA_DIGEST_LENGTH * 2) + 1];
         char *ptr = &state_hash_hex_output[0];
