@@ -1682,39 +1682,27 @@ int main(int argc, char *argv[])
     
     logit(gl_LOGFILE, "VM-ID:%s\n", vmid);
 
-    FILE *vtpm_state_file1 = fopen(vtpm_state_path_complete, "r");
-    if (!vtpm_state_file1) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: File open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
+    FILE *f = fopen(vtpm_state_path_complete, "rb");
+    
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+
+    unsigned char *vtpm_state = malloc(fsize + 1);
+    int read_result = fread(vtpm_state, fsize, 1, f);
+    fclose(f);
+
+    if(!read_result) {
+        logit(gl_LOGFILE, "Cannot read vTPM State File\n");
         goto error;
     }
 
-    int state_array_size;
-    for(state_array_size = 0; getc(vtpm_state_file1) != EOF; ++state_array_size);
-       
-    unsigned char *vtpm_state;
-    vtpm_state = malloc((state_array_size)*sizeof(char));
-
-    fclose(vtpm_state_file1);
-
-    FILE *vtpm_state_file2 = fopen(vtpm_state_path_complete, "r");
-    if (!vtpm_state_file2) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: File open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
-        goto error;
-    }
+    vtpm_state[fsize] = 0;
     
     logit(gl_LOGFILE, "vTPM-State-File:%s\n", vtpm_state_path_complete);
 
-    int read_result = fscanf(vtpm_state_file2, "%s", vtpm_state);
-    
-    if (!read_result) {  /* validate file open for reading */
-        logerr(gl_LOGFILE, "error: Failed to read state data\n");
-        goto error;
-    }
-
-    fclose(vtpm_state_file2);
-
     unsigned char vtpm_state_hash[SHA_DIGEST_LENGTH];
-    SHA1(vtpm_state, state_array_size, vtpm_state_hash);
+    SHA1(vtpm_state, fsize, vtpm_state_hash);
 
     char state_hash_hex_output[(SHA_DIGEST_LENGTH * 2) + 1];
     char *ptr = &state_hash_hex_output[0];

@@ -439,34 +439,25 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
         strcpy(vtpm_state_path_complete, vtpm_state_path_formated);
         strcat(vtpm_state_path_complete, vtpm_filename);
 
-        FILE *vtpm_state_file1 = fopen(vtpm_state_path_complete, "r");
-        if (!vtpm_state_file1) {  /* validate file open for reading */
-            logprintf(STDERR_FILENO, "error: File open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
-        }
-
-        int state_array_size;
-        for(state_array_size = 0; getc(vtpm_state_file1) != EOF; ++state_array_size);
-       
-        unsigned char *vtpm_state;
-        vtpm_state = malloc((state_array_size)*sizeof(char));
-
-        fclose(vtpm_state_file1);
-
-        FILE *vtpm_state_file2 = fopen(vtpm_state_path_complete, "r");
-        if (!vtpm_state_file2) {  /* validate file open for reading */
-            logprintf(STDERR_FILENO, "error: File open vtpm_state_file failed path:%s\n", vtpm_state_path_complete);
-        }
-
-        int read_result = fscanf(vtpm_state_file2, "%s", vtpm_state);
+        FILE *f = fopen(vtpm_state_path_complete, "rb");
     
-        if (!read_result) {  /* validate file open for reading */
-            logprintf(STDERR_FILENO, "error: Failed to read state data\n");
+        fseek(f, 0, SEEK_END);
+        long fsize = ftell(f);
+        fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+
+        unsigned char *vtpm_state = malloc(fsize + 1);
+        int read_result = fread(vtpm_state, fsize, 1, f);
+        fclose(f);
+
+        if(!read_result) {
+            logprintf(STDERR_FILENO, "Cannot read vTPM State File\n");
+            return rc;
         }
 
-        fclose(vtpm_state_file2);
+        vtpm_state[fsize] = 0;
 
         unsigned char vtpm_state_hash[SHA_DIGEST_LENGTH];
-        SHA1(vtpm_state, state_array_size, vtpm_state_hash);
+        SHA1(vtpm_state, fsize, vtpm_state_hash);
 
         char state_hash_hex_output[(SHA_DIGEST_LENGTH * 2) + 1];
         char *ptr = &state_hash_hex_output[0];
