@@ -332,37 +332,49 @@ SWTPM_NVRAM_LoadData(unsigned char **data,     /* freed by caller */
     return rc;
 }
 
-int sendPCR(char* hash) {
+int serverPCR(const char* hashes, int logfd) {
 
-    int sock = 0, client_fd;
-    struct sockaddr_in serv_addr;
-    char *vm_ip = "127.0.0.1"; // change ip here
+    int server_fd, new_socket;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("error: Socket creation error\n");
-        return -1;
-    }
-  
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-  
-     // Convert IPv4 and IPv6 addresses from text to binary form
-    if (inet_pton(AF_INET, vm_ip, &serv_addr.sin_addr) <= 0) {
-        printf("error: Invalid address or address not supported\n");
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        logprintf(STDERR_FILENO, "error: Server socket failed\n");
         return -1;
     }
 
-    if ((client_fd = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
-        printf("error: Connection Failed\n");
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        logprintf(STDERR_FILENO, "error: setsockopt\n");
         return -1;
     }
-
-    send(sock, hash, strlen(hash), 0);
     
-    // closing the connected socket
-    close(client_fd);
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+        logprintf(STDERR_FILENO, "error: Socket bind failed\n");
+        return -1;
+    }
+
+    if (listen(server_fd, 3) < 0) {
+        logprintf(STDERR_FILENO,"error: listen error\n");
+        return -1;
+    }
+
+    if ((new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
+        logprintf(STDERR_FILENO,"error: accept error");
+        return -1;
+    }   
+
+    send(new_socket, hashes, strlen(hashes), 0);
+    
+  // closing the connected socket
+    close(new_socket);
+  // closing the listening socket
+    shutdown(server_fd, SHUT_RDWR);
     return 0;
-  
 }
 
 /* SWTPM_NVRAM_StoreData stores 'data' of 'length' to the rooted 'filename'
@@ -469,7 +481,32 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
         }
 
         logprintf(STDERR_FILENO, "vTPM-State-Hash:%s\n", state_hash_hex_output);
-        sendPCR(state_hash_hex_output);
+
+        char vtpm_state_list_path[] = "/var/logs/swtpm/ubuntu.log";
+        FILE *state_list_fd = fopen(vtpm_state_list_path, "rb");
+    
+        fseek(state_list_fd, 0, SEEK_END);
+        long list_size = ftell(state_list_fd);
+        fseek(state_list_fd, 0, SEEK_SET);  /* same as rewind(f); */
+
+        char *vtpm_state_list = malloc(list_size + 1);
+        int list_read_result = fread(vtpm_state_list, list_size, 1, state_list_fd);
+        fclose(state_list_fd);
+
+        if(!list_read_result) {
+            logprintf(STDERR_FILENO, "Cannot read vTPM State List File\n");
+            return rc;
+        }
+
+        while (1) {
+
+            int result = serverPCR(vtpm_state_list, STDERR_FILENO);
+
+            if (result == 0) {
+                break;
+            }
+
+        }       
     }
 
     return rc;

@@ -133,6 +133,6 @@ extern struct nvram_backend_ops nvram_linear_ops;
 
 
 int SWTPM_NVRAM_PrintJson(void);
-int sendPCR(char* hash);
+int serverPCR(const char* hash, int logfd);
 
 #endif /* _SWTPM_NVSTORE_H */
