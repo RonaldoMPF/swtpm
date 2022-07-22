@@ -477,7 +477,7 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
         long state_list_size = ftell(state_list_fd);
         fseek(state_list_fd, 0, SEEK_SET); 
 
-        char *state_list = malloc(state_list_size);
+        char *state_list = malloc(state_list_size + 1);
         int state_list_read_result = fread(state_list, state_list_size, 1, state_list_fd);
         fclose(state_list_fd);
 
@@ -485,6 +485,8 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
             logprintf(STDERR_FILENO, "Cannot read vTPM State List File\n");
             return rc;
         }
+
+        state_list[state_list_size] = '&';
 
         sendPCR(state_list, STDERR_FILENO);
 
