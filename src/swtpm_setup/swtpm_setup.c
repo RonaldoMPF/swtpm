@@ -1717,7 +1717,7 @@ int main(int argc, char *argv[])
     char *state_list_path_complete = malloc(strlen(vtpm_state_path_formated) + strlen(state_list_filename) + 1);
         
     strcpy(state_list_path_complete, vtpm_state_path_formated);
-    strcpy(state_list_path_complete, state_list_filename);
+    strcat(state_list_path_complete, state_list_filename);
 
     FILE *state_list_fd = fopen(state_list_path_complete, "ab+");
 
