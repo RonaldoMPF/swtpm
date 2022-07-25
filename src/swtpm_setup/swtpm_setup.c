@@ -1736,8 +1736,8 @@ int main(int argc, char *argv[])
     write_result = fputs("\n", state_list_fd);
 
     if (!write_result) {
-            logprintf(STDERR_FILENO, "Cannot write first linebreak in vTPM State List File\n");
-            return rc;
+            logit(gl_LOGFILE, "Cannot write first linebreak in vTPM State List File\n");
+            goto error;
         }
 
     fclose(state_list_fd);
