@@ -1733,6 +1733,13 @@ int main(int argc, char *argv[])
         goto error;
     }
 
+    write_result = fputs("\n", state_list_fd);
+
+    if (!write_result) {
+            logprintf(STDERR_FILENO, "Cannot write first linebreak in vTPM State List File\n");
+            return rc;
+        }
+
     fclose(state_list_fd);
 
 out:

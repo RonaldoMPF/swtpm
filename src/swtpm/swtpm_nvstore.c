@@ -487,9 +487,17 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
             return rc;
         }
 
+        write_result = fputs("\n", state_list_fd);
+
+        if (!write_result) {
+            logprintf(STDERR_FILENO, "Cannot write linebreak in vTPM State List File\n");
+            return rc;
+        }
+
+
         fclose(state_list_fd);
 
-        state_list_fd = fopen(state_list_filename, "rb");
+        state_list_fd = fopen(state_list_path_complete, "rb");
         fseek(state_list_fd, 0, SEEK_END);
         long state_list_size = ftell(state_list_fd);
         fseek(state_list_fd, 0, SEEK_SET); 
