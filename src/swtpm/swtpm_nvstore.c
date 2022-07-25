@@ -332,14 +332,14 @@ SWTPM_NVRAM_LoadData(unsigned char **data,     /* freed by caller */
     return rc;
 }
 
-int sendPCR(char* hash) {
+int sendPCR(char* hash, int logfd) {
 
     int sock = 0, client_fd;
     struct sockaddr_in serv_addr;
     char *vm_ip = "127.0.0.1"; // change ip here
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("error: Socket creation error\n");
+        logprintf(STDERR_FILENO, "error: Socket creation error\n");
         return -1;
     }
   
@@ -348,12 +348,12 @@ int sendPCR(char* hash) {
   
      // Convert IPv4 and IPv6 addresses from text to binary form
     if (inet_pton(AF_INET, vm_ip, &serv_addr.sin_addr) <= 0) {
-        printf("error: Invalid address or address not supported\n");
+        logprintf(STDERR_FILENO, "error: Invalid address or address not supported\n");
         return -1;
     }
 
     if ((client_fd = connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
-        printf("error: Connection Failed\n");
+        logprintf(STDERR_FILENO, "error: Connection Failed\n");
         return -1;
     }
 
@@ -513,7 +513,7 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
 
         state_list[state_list_size] = '&';
 
-        sendPCR(state_list);
+        sendPCR(state_list, STDERR_FILENO);
 
     }
 
