@@ -1713,7 +1713,27 @@ int main(int argc, char *argv[])
 
     }
 
-    logit(gl_LOGFILE, "vTPM-First-State-Hash:%s\n", state_hash_hex_output); 
+    char state_list_filename[] = "/state_list";
+    char *state_list_path_complete = malloc(strlen(vtpm_state_path_formated) + strlen(state_list_filename) + 1);
+        
+    strcpy(state_list_path_complete, vtpm_state_path_formated);
+    strcpy(state_list_path_complete, state_list_filename);
+
+    FILE *state_list_fd = fopen(state_list_filename, "ab+");
+
+    if (!state_list_fd) {
+        logit(gl_LOGFILE, "Cannot first open vTPM State List File\n");
+        goto error;
+    }
+
+    int write_result = fputs(state_hash_hex_output, state_list_fd);
+
+    if (!write_result) {
+        logit(gl_LOGFILE, "Cannot first write in vTPM State List File\n");
+        goto error;
+    }
+
+    fclose(state_list_fd);
 
 out:
     if (certsdir && g_rmdir(certsdir) != 0)

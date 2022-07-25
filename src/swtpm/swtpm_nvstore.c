@@ -451,7 +451,6 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
 
         if(!read_result) {
             logprintf(STDERR_FILENO, "Cannot read vTPM State File\n");
-            return rc;
         }
 
         vtpm_state[fsize] = 0;
@@ -468,11 +467,29 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
 
         }
 
-        logprintf(STDERR_FILENO, "vTPM-State-Hash:%s\n", state_hash_hex_output);
-        close(STDERR_FILENO);
+        char state_list_filename[] = "/state_list";
+        char *state_list_path_complete = malloc(strlen(vtpm_state_path_formated) + strlen(state_list_filename) + 1);
+        
+        strcpy(state_list_path_complete, vtpm_state_path_formated);
+        strcpy(state_list_path_complete, state_list_filename);
 
-        char state_list_filename[] = "/var/log/swtpm/ubuntu-swtpm.log";
-        FILE *state_list_fd = fopen(state_list_filename, "rb");
+        FILE *state_list_fd = fopen(state_list_filename, "ab+");
+
+        if (!state_list_fd) {
+            logprintf(STDERR_FILENO, "Cannot open vTPM State List File\n");
+            return rc;
+        }
+
+        int write_result = fputs(state_hash_hex_output, state_list_fd);
+
+        if (!write_result) {
+            logprintf(STDERR_FILENO, "Cannot write in vTPM State List File\n");
+            return rc;
+        }
+
+        fclose(state_list_fd);
+
+        state_list_fd = fopen(state_list_filename, "rb");
         fseek(state_list_fd, 0, SEEK_END);
         long state_list_size = ftell(state_list_fd);
         fseek(state_list_fd, 0, SEEK_SET); 
@@ -482,7 +499,7 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
         fclose(state_list_fd);
 
         if(!state_list_read_result) {
-            printf("Cannot read vTPM State List File\n");
+            logprintf(STDERR_FILENO, "Cannot read vTPM State List File\n");
             return rc;
         }
 
