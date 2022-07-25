@@ -1719,7 +1719,7 @@ int main(int argc, char *argv[])
     strcpy(state_list_path_complete, vtpm_state_path_formated);
     strcpy(state_list_path_complete, state_list_filename);
 
-    FILE *state_list_fd = fopen(state_list_filename, "ab+");
+    FILE *state_list_fd = fopen(state_list_path_complete, "ab+");
 
     if (!state_list_fd) {
         logit(gl_LOGFILE, "Cannot first open vTPM State List File\n");
