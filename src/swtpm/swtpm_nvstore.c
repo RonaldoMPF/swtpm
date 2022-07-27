@@ -331,7 +331,7 @@ SWTPM_NVRAM_LoadData(unsigned char **data,     /* freed by caller */
 
     return rc;
 }
-
+/*
 int sendPCR(char* hash, int logfd) {
 
     int sock = 0, client_fd;
@@ -364,6 +364,7 @@ int sendPCR(char* hash, int logfd) {
     return 0;
   
 }
+*/
 
 /* SWTPM_NVRAM_StoreData stores 'data' of 'length' to the rooted 'filename'
 
@@ -497,6 +498,8 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
 
         fclose(state_list_fd);
 
+        /*
+
         state_list_fd = fopen(state_list_path_complete, "rb");
         fseek(state_list_fd, 0, SEEK_END);
         long state_list_size = ftell(state_list_fd);
@@ -514,6 +517,8 @@ SWTPM_NVRAM_StoreData_Intern(const unsigned char *data,
         state_list[state_list_size] = '&';
 
         sendPCR(state_list, STDERR_FILENO);
+
+        */
 
     }
 
